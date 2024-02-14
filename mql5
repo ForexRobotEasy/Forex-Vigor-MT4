@@ -1,0 +1,154 @@
+ // Forex Vigor MT4
+// Developer's Site: forexroboteasy.com
+// Development Name: Forex Robot Easy Team
+
+// Define the primary currencies
+enum Currencies
+{
+   EUR,
+   GBP,
+   AUD,
+   NZD,
+   USD,
+   CAD,
+   CHF,
+   JPY
+};
+
+// Define the number of currency pairs
+#define NUM_PAIRS 28
+
+// Define the number of periods for LWMA
+#define NUM_PERIODS 14
+
+// Define the minimum percentage difference for significance
+#define MIN_PERCENT_DIFF 0.01
+
+// Indicator initialization function
+int OnInit()
+{
+   // Retrieve historical and real-time data for currency pairs
+   double prices[NUM_PAIRS][NUM_PERIODS];
+   for (int i = 0; i < NUM_PAIRS; i++)
+   {
+      for (int j = 0; j < NUM_PERIODS; j++)
+      {
+         prices[i][j] = iClose(NULL, 0, j);
+      }
+   }
+
+   // Calculate the percentage difference between closing prices using LWMA
+   double percentDiff[NUM_PAIRS];
+   for (int i = 0; i < NUM_PAIRS; i++)
+   {
+      double sum = 0;
+      for (int j = 0; j < NUM_PERIODS; j++)
+      {
+         sum += prices[i][j] * (NUM_PERIODS - j);
+      }
+      percentDiff[i] = (prices[i][0] - (sum / 91)) / (sum / 91) * 100;
+   }
+
+   // Identify and eliminate insignificant values in the model based on statistical analysis
+   double significantValues[NUM_PAIRS];
+   int count = 0;
+   for (int i = 0; i < NUM_PAIRS; i++)
+   {
+      if (MathAbs(percentDiff[i]) > MIN_PERCENT_DIFF)
+      {
+         significantValues[count] = percentDiff[i];
+         count++;
+      }
+   }
+
+   // Determine the strength and direction of the currency momentum
+   double currencyMomentum[NUM_PAIRS];
+   for (int i = 0; i < count; i++)
+   {
+      if (significantValues[i] > 0)
+      {
+         currencyMomentum[i] = 1;
+      }
+      else if (significantValues[i] < 0)
+      {
+         currencyMomentum[i] = -1;
+      }
+      else
+      {
+         currencyMomentum[i] = 0;
+      }
+   }
+
+   // Display the momentum strength of each currency in an easily interpretable format
+   for (int i = 0; i < Currencies::JPY + 1; i++)
+   {
+      string currency;
+      switch (i)
+      {
+         case Currencies::EUR:
+            currency = 'EUR';
+            break;
+         case Currencies::GBP:
+            currency = 'GBP';
+            break;
+         case Currencies::AUD:
+            currency = 'AUD';
+            break;
+         case Currencies::NZD:
+            currency = 'NZD';
+            break;
+         case Currencies::USD:
+            currency = 'USD';
+            break;
+         case Currencies::CAD:
+            currency = 'CAD';
+            break;
+         case Currencies::CHF:
+            currency = 'CHF';
+            break;
+         case Currencies::JPY:
+            currency = 'JPY';
+            break;
+      }
+
+      double momentumStrength = 0;
+      for (int j = 0; j < count; j++)
+      {
+         if (currencyMomentum[j] == 1)
+         {
+            momentumStrength += MathAbs(significantValues[j]);
+         }
+         else if (currencyMomentum[j] == -1)
+         {
+            momentumStrength -= MathAbs(significantValues[j]);
+         }
+      }
+
+      Print('Momentum strength of ', currency, ': ', momentumStrength);
+   }
+
+   return (INIT_SUCCEEDED);
+}
+
+// Indicator deinitialization function
+void OnDeinit(const int reason)
+{
+   // Perform any necessary cleanup here
+}
+
+// Indicator calculation function
+int OnCalculate(const int rates_total,
+               const int prev_calculated,
+               const datetime &time[],
+               const double &open[],
+               const double &high[],
+               const double &low[],
+               const double &close[],
+               const long &tick_volume[],
+               const long &volume[],
+               const int &spread[])
+{
+   // Perform any necessary calculations here
+
+   return (rates_total);
+} 
